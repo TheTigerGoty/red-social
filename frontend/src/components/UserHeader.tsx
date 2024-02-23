@@ -1,12 +1,38 @@
-import { Avatar, Box, Flex, Link, Menu, MenuButton, MenuItem, MenuList, Portal, Text, VStack, useToast } from "@chakra-ui/react"
+import { Avatar, Box, Button, Flex, Link, Menu, MenuButton, MenuItem, MenuList, Portal, Text, VStack, useToast } from "@chakra-ui/react"
 import { BsInstagram } from "react-icons/bs"
 import { CgMoreO } from "react-icons/cg"
+import { useRecoilValue } from "recoil";
+import userAtom from "../atoms/userAtom";
+import { Link as RouterLink } from 'react-router-dom'
+import { useState } from "react";
+import useShowToast from "../hooks/useShowToast";
 
 //!---------------------------------------------------------------------------------!//
 
-const UserHeader: React.FC = () => {
+export interface User {
+    _id: string;
+    name: string;
+    username: string;
+    bio: string;
+    followers: string[];
+    profilePic?: string;
+}
+
+//*---------------------------------------------------------------------------------*//
+
+interface UserHeaderProps {
+    user: User;
+}
+
+//!---------------------------------------------------------------------------------!//
+
+const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
 
     const toast = useToast(); // TODO: Uso de la ventana emergente
+    const currentUser = useRecoilValue(userAtom);
+    const showToast = useShowToast();
+    const [following, setFollowing] = useState(user.followers.includes(currentUser._id));
+    const [updating, setUpdating] = useState(false);
 
     //*---------------------------------------------------------------------------------*//
 
@@ -21,6 +47,50 @@ const UserHeader: React.FC = () => {
                 isClosable: true
             })
         })
+    };
+
+    //*---------------------------------------------------------------------------------*//
+
+    const handleFollowUnFollow = async () => {
+
+        if (!currentUser) {
+            showToast('Error', 'Debes iniciar sesion para seguir a esta cuenta', 'error');
+            return;
+        }
+
+        if (updating) return;
+
+        setUpdating(true);
+
+        try {
+            const res = await fetch(`/api/users/follow/${user._id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await res.json();
+
+            if (data.error) {
+                showToast('Error', data.error, 'error');
+                return;
+            };
+
+            if (following) {
+                showToast('Success', `Dejaste de seguir a ${user.name}`, 'success');
+                user.followers.pop();
+            } else {
+                showToast('Success', `Empezaste a seguir a ${user.name}`, 'success');
+                user.followers.push(currentUser._id);
+            }; // TODO: ESTO SOLO SIMULA, MAS NO ES A TIEMPO REAL
+
+            setFollowing(!following);
+        } catch (error) {
+            showToast('Error', (error as string), 'error');
+        } finally {
+            setUpdating(false);
+        }
     }
 
     //!---------------------------------------------------------------------------------!//
@@ -30,31 +100,56 @@ const UserHeader: React.FC = () => {
             <Flex justifyContent={'space-between'} w={'full'}>
                 <Box>
                     <Text fontSize={'2xl'} fontWeight={'bold'}>
-                        TheTigerGod
+                        {user.name}
                     </Text>
                     <Flex gap={2} alignItems={'center'}>
-                        <Text fontSize={'sm'}>thetigergod</Text>
+                        <Text fontSize={'sm'}>{user.username}</Text>
                         <Text fontSize={'xs'} bg={'gray.dark'} color={'gray.light'} p={1} borderRadius={'full'}>
                             threads.net
                         </Text>
                     </Flex>
                 </Box>
                 <Box>
-                    <Avatar
-                        name="Castro Barrera"
-                        src="/zuck-avatar.png"
-                        size={{
-                            base: 'md',
-                            md: 'xl'
-                        }} //TODO : MediaQuery del avatar del Usuario
-                    />
+                    {user.profilePic && (
+                        <Avatar
+                            name={user.name}
+                            src={user.profilePic}
+                            size={{
+                                base: 'md',
+                                md: 'xl'
+                            }} //TODO : MediaQuery del avatar del Usuario
+                        />
+                    )}
+                    {!user.profilePic && (
+                        <Avatar
+                            name={user.name}
+                            src='https://bit.ly/broken-link'
+                            size={{
+                                base: 'md',
+                                md: 'xl'
+                            }} //TODO : MediaQuery del avatar del Usuario
+                        />
+                    )}
                 </Box>
             </Flex>
 
-            <Text>Co-funder, executive chairman and CEO of Meta Platsforms.</Text>
+            <Text>{user.bio}</Text>
+
+            {currentUser._id === user._id && (
+                <Link as={RouterLink} to="/update">
+                    <Button size={'sm'}>Actualizar Perfil</Button>
+                </Link>
+            )}
+
+            {currentUser._id !== user._id && (
+                <Button size={'sm'} onClick={handleFollowUnFollow} isLoading={updating}>
+                    {following ? 'Dejar de Seguir' : 'Seguir'}
+                </Button>
+            )}
+
             <Flex w={'full'} justifyContent={'space-between'}>
                 <Flex gap={2} alignItems={'center'}>
-                    <Text color={'gray.light'}>3.2K followers</Text>
+                    <Text color={'gray.light'}>{user.followers.length} followers</Text>
                     <Box w={1} h={1} bg={'gray.light'} borderRadius={'full'}></Box>
                     <Link color={'gray.light'}>instagram.com</Link>
                 </Flex>

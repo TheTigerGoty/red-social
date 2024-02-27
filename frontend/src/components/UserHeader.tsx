@@ -16,13 +16,15 @@ export interface User {
     bio: string;
     followers: string[];
     profilePic?: string;
+    email: string;
+    password: string;
 }
 
 //*---------------------------------------------------------------------------------*//
 
 interface UserHeaderProps {
-    user: User;
-}
+    user: User | null;
+} 
 
 //!---------------------------------------------------------------------------------!//
 
@@ -31,7 +33,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
     const toast = useToast(); // TODO: Uso de la ventana emergente
     const currentUser = useRecoilValue(userAtom);
     const showToast = useShowToast();
-    const [following, setFollowing] = useState(user.followers.includes(currentUser._id));
+    const [following, setFollowing] = useState(user?.followers.includes(currentUser?._id || '')); // Verifica si el usuario actual esta incluido en la lista de seguidores
     const [updating, setUpdating] = useState(false);
 
     //*---------------------------------------------------------------------------------*//
@@ -53,17 +55,17 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
 
     const handleFollowUnFollow = async () => {
 
-        if (!currentUser) {
+        if (!currentUser) { // Si el usaurio no esta autenticada se mostrara el siguiente mensaje cuando desea presionar los follows
             showToast('Error', 'Debes iniciar sesion para seguir a esta cuenta', 'error');
             return;
-        }
+        } 
 
-        if (updating) return;
+        if (updating) return; // Si hay actualizacion en curso la funcion de bloqueara para evitar solicitudes duplicadas
 
-        setUpdating(true);
+        setUpdating(true); 
 
         try {
-            const res = await fetch(`/api/users/follow/${user._id}`, {
+            const res = await fetch(`/api/users/follow/${user?._id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -78,14 +80,14 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
             };
 
             if (following) {
-                showToast('Success', `Dejaste de seguir a ${user.name}`, 'success');
-                user.followers.pop();
+                showToast('Success', `Dejaste de seguir a ${user?.name}`, 'success');
+                user?.followers.pop();
             } else {
-                showToast('Success', `Empezaste a seguir a ${user.name}`, 'success');
-                user.followers.push(currentUser._id);
+                showToast('Success', `Empezaste a seguir a ${user?.name}`, 'success');
+                user?.followers.push(currentUser?._id);
             }; // TODO: ESTO SOLO SIMULA, MAS NO ES A TIEMPO REAL
 
-            setFollowing(!following);
+            setFollowing(!following); // Cambia el estado following al contrario de su valor actual. Si estaba siguiendo, ahora dejará de seguir, y viceversa.
         } catch (error) {
             showToast('Error', (error as string), 'error');
         } finally {
@@ -100,17 +102,17 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
             <Flex justifyContent={'space-between'} w={'full'}>
                 <Box>
                     <Text fontSize={'2xl'} fontWeight={'bold'}>
-                        {user.name}
+                        {user?.name}
                     </Text>
                     <Flex gap={2} alignItems={'center'}>
-                        <Text fontSize={'sm'}>{user.username}</Text>
+                        <Text fontSize={'sm'}>{user?.username}</Text>
                         <Text fontSize={'xs'} bg={'gray.dark'} color={'gray.light'} p={1} borderRadius={'full'}>
                             threads.net
                         </Text>
                     </Flex>
                 </Box>
                 <Box>
-                    {user.profilePic && (
+                    {user?.profilePic && (
                         <Avatar
                             name={user.name}
                             src={user.profilePic}
@@ -120,9 +122,9 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
                             }} //TODO : MediaQuery del avatar del Usuario
                         />
                     )}
-                    {!user.profilePic && (
+                    {!user?.profilePic && (
                         <Avatar
-                            name={user.name}
+                            name={user?.name}
                             src='https://bit.ly/broken-link'
                             size={{
                                 base: 'md',
@@ -133,15 +135,15 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
                 </Box>
             </Flex>
 
-            <Text>{user.bio}</Text>
+            <Text>{user?.bio}</Text>
 
-            {currentUser._id === user._id && (
+            {currentUser?._id === user?._id && (
                 <Link as={RouterLink} to="/update">
                     <Button size={'sm'}>Actualizar Perfil</Button>
                 </Link>
             )}
 
-            {currentUser._id !== user._id && (
+            {currentUser?._id !== user?._id && (
                 <Button size={'sm'} onClick={handleFollowUnFollow} isLoading={updating}>
                     {following ? 'Dejar de Seguir' : 'Seguir'}
                 </Button>
@@ -149,7 +151,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
 
             <Flex w={'full'} justifyContent={'space-between'}>
                 <Flex gap={2} alignItems={'center'}>
-                    <Text color={'gray.light'}>{user.followers.length} followers</Text>
+                    <Text color={'gray.light'}>{user?.followers.length} seguidores</Text>
                     <Box w={1} h={1} bg={'gray.light'} borderRadius={'full'}></Box>
                     <Link color={'gray.light'}>instagram.com</Link>
                 </Flex>
@@ -165,7 +167,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
                             </MenuButton>
                             <Portal>
                                 <MenuList bg={'gray.dark'}>
-                                    <MenuItem bg={'gray.dark'} onClick={copyURL}>Copy Link</MenuItem>
+                                    <MenuItem bg={'gray.dark'} onClick={copyURL}>Copiar Link</MenuItem>
                                 </MenuList>
                             </Portal>
                         </Menu>

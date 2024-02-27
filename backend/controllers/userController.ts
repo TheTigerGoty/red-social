@@ -3,6 +3,8 @@ import User, { UserInterface } from '../models/userModel';
 import bcrypt from 'bcryptjs'
 import generateTokenAndSetCookie from '../helpers/generateTokenAndSetCookie';
 import { v2 as cloudinary } from 'cloudinary';
+import mongoose from 'mongoose';
+import Post from '../models/postModel';
 
 //!----------------------------------------------------------------------------------------!//
 
@@ -13,10 +15,20 @@ interface AuthenticatedRequest extends Request {
 //!----------------------------------------------------------------------------------------!//
 
 export const getUserProfile = async (req: Request, res: Response) => {
-    const { username } = req.params;
+
+    // Buscaremos el perfil del usuario con nombre 'username' o 'userId'
+    // 'query' es 'username' o 'userId'
+    const { query } = req.params;
 
     try {
-        const user = await User.findOne({ username }).select('-password').select('-updatedAt');
+        let user;
+
+        if (mongoose.Types.ObjectId.isValid(query)) { // Si 'query' es 'userId'
+            user = await User.findOne({ _id: query }).select('-password').select('-updatedAt');
+        } else { // Si 'query' es 'username'
+            user = await User.findOne({ username: query }).select('-password').select('-updatedAt');
+        }
+
         if (!user) return res.status(400).json({ error: 'Usuario no encontrado' });
 
         res.status(200).json(user);
@@ -178,6 +190,17 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
         user.bio = bio || user.bio;
 
         user = await user.save();
+
+        await Post.updateMany(
+            { 'replies.userId': userId },
+            {
+                $set: {
+                    'replies.$[reply].username': user.username,
+                    'replies.$[reply].userProfilePic': user.profilePic,
+                }
+            },
+            { arrayFilters: [{ 'reply.userId': userId }] }
+        )
 
         // Convertir en nulo la respuesta de contraseña (Asi no se seteara en localStorage)
         user.password = null;

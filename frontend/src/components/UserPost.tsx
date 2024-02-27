@@ -1,3 +1,5 @@
+//! NO AFECTA A NINGUN COMPONENTE 
+
 import { Avatar, Box, Flex, Image, Text } from "@chakra-ui/react"
 import { BsThreeDots } from "react-icons/bs"
 import { Link } from "react-router-dom"
@@ -6,7 +8,7 @@ import { useState } from "react"
 
 //!---------------------------------------------------------------------------------!//
 
-interface UsePostProps {
+interface UserPostProps {
     likes: number;
     replies: number;
     postImg?: string;
@@ -15,7 +17,7 @@ interface UsePostProps {
 
 //!---------------------------------------------------------------------------------!//
 
-const UsePost: React.FC<UsePostProps> = ({ postImg, postTitle, likes, replies }) => {
+const UserPost: React.FC<UserPostProps> = ({ postImg, postTitle, likes, replies }) => {
 
     const [liked, setLiked] = useState<boolean>(false); //TODO : Funcionalidad del cambio de Estado de Like
 
@@ -78,4 +80,4 @@ const UsePost: React.FC<UsePostProps> = ({ postImg, postTitle, likes, replies })
 
 //!---------------------------------------------------------------------------------!//
 
-export default UsePost
+export default UserPost

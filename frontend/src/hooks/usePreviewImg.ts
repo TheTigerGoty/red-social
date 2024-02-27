@@ -6,6 +6,7 @@ import useShowToast from "./useShowToast";
 interface PreviewImgHook {
     handleImageChange: (e: ChangeEvent<HTMLInputElement>) => void;
     imgUrl: string | null;
+    setImgUrl: React.Dispatch<React.SetStateAction<string | null>>
 }
 
 //!---------------------------------------------------------------------------------!//
@@ -38,7 +39,7 @@ const usePreviewImg = (): PreviewImgHook => {
 
     //!---------------------------------------------------------------------------------!//
 
-    return { handleImageChange, imgUrl };
+    return { handleImageChange, imgUrl, setImgUrl };
 };
 
 //!---------------------------------------------------------------------------------!//
